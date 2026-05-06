@@ -1,0 +1,22 @@
+api_version = "2026-01"
+
+[[extensions]]
+type = "ui_extension"
+# Change the merchant-facing name of the extension in locales/en.default.json
+name = "t:name"
+uid = "79d765ee-1d15-b710-76e6-66dc81eaa051cb81c833"
+handle = "work-order-smart-grid"
+description = "A preact POS UI extension"
+
+[extensions.capabilities]
+network_access = true
+
+# module: file that contains your extension’s source code
+# target: location where your extension appears in POS
+[[extensions.targeting]]
+module = "./src/Tile.jsx"
+target = "pos.home.tile.render"
+
+[[extensions.targeting]]
+module = "./src/Modal.jsx"
+target = "pos.home.modal.render"
