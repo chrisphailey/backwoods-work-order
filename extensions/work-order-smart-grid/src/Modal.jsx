@@ -21,7 +21,7 @@ const [cartLoaded, setCartLoaded] = useState(false);
 
   try {
     const response = await fetch(
-  "https://bookmark-social-berry-useful.trycloudflare.com/api/work-orders",
+  "https://backwoods-work-order.onrender.com/api/work-orders",
   {
     method: "GET",
     headers: {
@@ -97,7 +97,7 @@ async function loadIntoCart() {
     setCartLoaded(true);
     
     await fetch(
-  `https://bookmark-social-berry-useful.trycloudflare.com/api/work-orders/${selected.replitId}/pos-loaded`,
+  `https://backwoods-work-order.onrender.com/api/work-orders${selected.replitId}/pos-loaded`,
   {
     method: "POST",
   }
