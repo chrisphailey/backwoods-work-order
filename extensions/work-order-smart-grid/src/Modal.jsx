@@ -88,6 +88,7 @@ async function loadIntoCart() {
 
     await shopify.cart.addCartProperties({
       workOrderId: selected.id,
+      replitWorkOrderId: String(selected.replitId),
       customer: selected.customer,
       customerEmail: selected.email || "",
       shopifyCustomerId: selected.shopifyCustomerId || "",
