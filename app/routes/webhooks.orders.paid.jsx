@@ -12,6 +12,13 @@ function getOrderAttribute(order, key) {
   return found?.value || null;
 }
 
+export async function loader() {
+  return Response.json({
+    ok: true,
+    message: "orders/paid webhook route is live. Shopify will POST here.",
+  });
+}
+
 export async function action({ request }) {
   try {
     const order = await request.json();
