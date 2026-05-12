@@ -20,7 +20,7 @@ api_version = "2026-07"
   topics = [ "app/uninstalled" ]
 
   [[webhooks.subscriptions]]
-  uri = "/webhooks/orders/paid"
+  uri = "https://backwoods-work-order.onrender.com/webhooks/orders/paid"
   topics = [ "orders/paid" ]
 
 [access_scopes]
