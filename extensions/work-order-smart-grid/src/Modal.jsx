@@ -11,17 +11,25 @@ function Extension() {
   const [workOrders, setWorkOrders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-// const [cartLoaded, setCartLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [loadedWorkOrderIds, setLoadedWorkOrderIds] = useState([]);
-  useEffect(() => {
+  
+useEffect(() => {
   async function loadRememberedOrders() {
     try {
       const saved = await shopify.storage.get(LOADED_WORK_ORDERS_KEY);
-      setLoadedWorkOrderIds(Array.isArray(saved) ? saved : []);
+
+      if (!saved) {
+        setLoadedWorkOrderIds([]);
+        return;
+      }
+
+      const parsed = JSON.parse(String(saved));
+      setLoadedWorkOrderIds(Array.isArray(parsed) ? parsed : []);
     } catch (error) {
       console.error("Failed to read loaded work orders", error);
+      setLoadedWorkOrderIds([]);
     }
   }
 
@@ -97,7 +105,10 @@ async function rememberLoadedWorkOrder(workOrderId) {
   setLoadedWorkOrderIds(nextIds);
 
   try {
-    await shopify.storage.set(LOADED_WORK_ORDERS_KEY, nextIds);
+    await shopify.storage.set(
+      LOADED_WORK_ORDERS_KEY,
+      JSON.stringify(nextIds)
+    );
   } catch (error) {
     console.error("Failed to save loaded work order", error);
   }
@@ -106,7 +117,6 @@ async function rememberLoadedWorkOrder(workOrderId) {
 async function loadIntoCart() {
   if (loadedWorkOrderIds.includes(selected.id)) {
   shopify.toast.show("This work order is already loaded");
-  await shopify.navigation.navigate("shopify:pos/cart");
   return;
 }
   if (!selected) return;
@@ -138,7 +148,7 @@ async function loadIntoCart() {
       vehicle: selected.vehicle,
     });
     await rememberLoadedWorkOrder(selected.id);
-    // setCartLoaded(true);
+
     
 //     await fetch(
 //   `https://backwoods-work-order.onrender.com/api/work-orders${selected.replitId}/pos-loaded`,
@@ -211,20 +221,22 @@ const visibleWorkOrders = workOrders.filter((order) => {
     <s-button
   onClick={async () => {
     if (loadedWorkOrderIds.includes(selected.id)) {
-      await shopify.navigation.navigate("shopify:pos/cart");
+      shopify.toast.show("This work order is already loaded in the cart");
       return;
     }
 
     await loadIntoCart();
   }}
+  disabled={loadedWorkOrderIds.includes(selected.id)}
 >
-  {loadedWorkOrderIds.includes(selected.id) ? "Open in Cart" : "Load into Cart"}
+  {loadedWorkOrderIds.includes(selected.id)
+    ? "Loaded in Cart"
+    : "Load into Cart"}
 </s-button>
 
    <s-button
   onClick={() => {
     setSelected(null);
-    // setCartLoaded(false);
   }}>Back</s-button>
   </s-stack>
 )}
