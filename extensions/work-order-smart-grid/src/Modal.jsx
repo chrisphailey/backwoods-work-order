@@ -97,12 +97,12 @@ async function loadIntoCart() {
     setLoadedWorkOrderIds((previous) => [...previous, selected.id]);
     setCartLoaded(true);
     
-    await fetch(
-  `https://backwoods-work-order.onrender.com/api/work-orders${selected.replitId}/pos-loaded`,
-  {
-    method: "POST",
-  }
-);
+//     await fetch(
+//   `https://backwoods-work-order.onrender.com/api/work-orders${selected.replitId}/pos-loaded`,
+//   {
+//     method: "POST",
+//   }
+// );
     shopify.toast.show("Work order loaded into cart");
   } catch (error) {
     console.error("Mark loaded failed", error);
