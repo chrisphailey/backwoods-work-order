@@ -1,6 +1,7 @@
 import "@shopify/ui-extensions/preact";
 import {render} from "preact";
 import {useEffect, useState} from "preact/hooks";
+const LOADED_WORK_ORDERS_KEY = "loadedWorkOrderIds";
 
 export default async () => {
   render(<Extension />, document.body);
@@ -10,10 +11,22 @@ function Extension() {
   const [workOrders, setWorkOrders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
-const [cartLoaded, setCartLoaded] = useState(false);
+// const [cartLoaded, setCartLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [loadedWorkOrderIds, setLoadedWorkOrderIds] = useState([]);
+  useEffect(() => {
+  async function loadRememberedOrders() {
+    try {
+      const saved = await shopify.storage.get(LOADED_WORK_ORDERS_KEY);
+      setLoadedWorkOrderIds(Array.isArray(saved) ? saved : []);
+    } catch (error) {
+      console.error("Failed to read loaded work orders", error);
+    }
+  }
+
+  loadRememberedOrders();
+}, []);
 
   async function loadWorkOrders() {
   setLoading(true);
@@ -47,23 +60,53 @@ useEffect(() => {
   loadWorkOrders();
 }, []);
 async function attachCustomerToCart(order) {
-  if (!order.shopifyCustomerId) return;
+  if (!order.shopifyCustomerId) {
+    console.log("No Shopify customer ID on work order", order);
+    return;
+  }
+
+  const customerId = Number(order.shopifyCustomerId);
 
   try {
+    console.log("Trying to attach customer", {
+      customerId,
+      customerName: order.customer,
+      email: order.email,
+    });
+
     await shopify.cart.setCustomer({
-      id: Number(order.shopifyCustomerId),
+      id: customerId,
     });
 
     shopify.toast.show("Customer attached");
   } catch (error) {
-    console.error("Customer attach failed", error);
-    shopify.toast.show("Customer attach failed, continuing");
+    console.error("Customer attach failed", {
+      error,
+      customerId,
+      customerName: order.customer,
+      email: order.email,
+    });
+
+    shopify.toast.show(`Customer attach failed: ${error.message || "unknown"}`);
+  }
+}
+
+async function rememberLoadedWorkOrder(workOrderId) {
+  const nextIds = Array.from(new Set([...loadedWorkOrderIds, workOrderId]));
+
+  setLoadedWorkOrderIds(nextIds);
+
+  try {
+    await shopify.storage.set(LOADED_WORK_ORDERS_KEY, nextIds);
+  } catch (error) {
+    console.error("Failed to save loaded work order", error);
   }
 }
 
 async function loadIntoCart() {
   if (loadedWorkOrderIds.includes(selected.id)) {
   shopify.toast.show("This work order is already loaded");
+  await shopify.navigation.navigate("shopify:pos/cart");
   return;
 }
   if (!selected) return;
@@ -94,8 +137,8 @@ async function loadIntoCart() {
       shopifyCustomerId: selected.shopifyCustomerId || "",
       vehicle: selected.vehicle,
     });
-    setLoadedWorkOrderIds((previous) => [...previous, selected.id]);
-    setCartLoaded(true);
+    await rememberLoadedWorkOrder(selected.id);
+    // setCartLoaded(true);
     
 //     await fetch(
 //   `https://backwoods-work-order.onrender.com/api/work-orders${selected.replitId}/pos-loaded`,
@@ -166,18 +209,22 @@ const visibleWorkOrders = workOrders.filter((order) => {
     </s-section>
 
     <s-button
-  onClick={loadIntoCart}
-  disabled={cartLoaded || loadedWorkOrderIds.includes(selected.id)}
+  onClick={async () => {
+    if (loadedWorkOrderIds.includes(selected.id)) {
+      await shopify.navigation.navigate("shopify:pos/cart");
+      return;
+    }
+
+    await loadIntoCart();
+  }}
 >
-  {cartLoaded || loadedWorkOrderIds.includes(selected.id)
-    ? "Loaded into Cart"
-    : "Load into Cart"}
+  {loadedWorkOrderIds.includes(selected.id) ? "Open in Cart" : "Load into Cart"}
 </s-button>
 
    <s-button
   onClick={() => {
     setSelected(null);
-    setCartLoaded(false);
+    // setCartLoaded(false);
   }}>Back</s-button>
   </s-stack>
 )}
