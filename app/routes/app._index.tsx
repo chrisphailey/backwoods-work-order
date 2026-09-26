@@ -160,6 +160,21 @@ export default function Index() {
         Generate a product
       </s-button>
 
+      <s-section heading="Work order tax report">
+        <s-paragraph>
+          Download a CSV of every completed/paid work order with taxable
+          subtotal, nontaxable subtotal, sales tax, and total broken out into
+          separate columns for accounting.
+        </s-paragraph>
+        <s-button
+          onClick={() =>
+            window.open("/app/reports/work-orders", "_blank", "noopener")
+          }
+        >
+          Download work order tax report (CSV)
+        </s-button>
+      </s-section>
+
       <s-section heading="Congrats on creating a new Shopify app 🎉">
         <s-paragraph>
           This embedded app template uses{" "}
