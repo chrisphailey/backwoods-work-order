@@ -7,6 +7,41 @@ export default async () => {
   render(<Extension />, document.body);
 };
 
+function parseMoney(value) {
+  return Number(String(value).replace(/[^0-9.-]/g, "")) || 0;
+}
+
+function formatMoney(value) {
+  return `$${value.toFixed(2)}`;
+}
+
+function lineAmount(item) {
+  const quantity = Math.max(1, Number(item.quantity || 1));
+  return parseMoney(item.price) * quantity;
+}
+
+function taxableSubtotal(order) {
+  return (order.items || [])
+    .filter((item) => item.taxable !== false)
+    .reduce((sum, item) => sum + lineAmount(item), 0);
+}
+
+function nontaxableSubtotal(order) {
+  return (order.items || [])
+    .filter((item) => item.taxable === false)
+    .reduce((sum, item) => sum + lineAmount(item), 0);
+}
+
+function salesTax(order) {
+  if (order.tax !== undefined && order.tax !== null) {
+    return Number(order.tax);
+  }
+
+  const computed =
+    parseMoney(order.total) - taxableSubtotal(order) - nontaxableSubtotal(order);
+  return computed > 0 ? computed : 0;
+}
+
 function Extension() {
   const [workOrders, setWorkOrders] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -203,7 +238,14 @@ const visibleWorkOrders = workOrders.filter((order) => {
     <s-text>Selected: {selected.id}</s-text>
     <s-text>{selected.customer}</s-text>
     <s-text>{selected.vehicle}</s-text>
-    <s-text>{selected.total}</s-text>
+    <s-text>Taxable subtotal: {formatMoney(taxableSubtotal(selected))}</s-text>
+    {nontaxableSubtotal(selected) > 0 ? (
+      <s-text>
+        Nontaxable subtotal: {formatMoney(nontaxableSubtotal(selected))}
+      </s-text>
+    ) : null}
+    <s-text>Sales tax: {formatMoney(salesTax(selected))}</s-text>
+    <s-text>Total: {selected.total}</s-text>
 
     <s-section heading="Items">
       

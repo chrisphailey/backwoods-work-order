@@ -6,6 +6,36 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+// The Replit work order API's exact field names for tax tracking aren't
+// confirmed, so check the common ones it's likely to use.
+function firstDefined(...values) {
+  for (const value of values) {
+    if (value !== undefined && value !== null && value !== "") return value;
+  }
+  return undefined;
+}
+
+function readItemTaxable(item) {
+  const value = firstDefined(
+    item.taxable,
+    item.isTaxable,
+    item.taxExempt === undefined ? undefined : !item.taxExempt,
+    item.tax_exempt === undefined ? undefined : !item.tax_exempt
+  );
+  return value === undefined ? true : Boolean(value);
+}
+
+function readOrderTax(order) {
+  const value = firstDefined(
+    order.tax,
+    order.taxTotal,
+    order.salesTax,
+    order.taxAmount,
+    order.totalTax
+  );
+  return value === undefined ? undefined : Number(value);
+}
+
 export async function loader({ request }) {
   try {
     const url = new URL(request.url);
@@ -50,6 +80,7 @@ export async function loader({ request }) {
           ? `${order.customFields?.bikeMake || ""} ${order.customFields?.model || ""}`.trim()
           : order.title,
       total: `$${Number(order.total || 0).toFixed(2)}`,
+      tax: readOrderTax(order),
       status: order.status,
       items: (order.lineItems || []).map((item, index) => ({
         id: `${order.id}-${index}`,
@@ -57,6 +88,7 @@ export async function loader({ request }) {
         quantity: item.quantity || 1,
         price: `$${Number(item.unitPrice || 0).toFixed(2)}`,
         variantId: item.shopifyVariantId || null,
+        taxable: readItemTaxable(item),
       })),
     }));
 
